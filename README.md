@@ -1,7 +1,3 @@
-Here’s a **professional and polished README.md** version for your GitHub repository — written in a clean, developer-friendly format and highlighting your project’s best features 👇
-
----
-
 # 🎯 Tic Tac Toe: AI Challenge
 
 A **classic Tic Tac Toe game** built using **Vanilla HTML, CSS, and JavaScript**, featuring a sleek **dark modern theme**, **two-player mode**, and a **smart AI opponent** that can **block and win strategically**.
@@ -97,6 +93,3 @@ For more info, check out the official [Create React App documentation](https://g
 
 🔗 [GitHub Profile](https://github.com/AdityaAlibade)
 
----
-
-Would you like me to **add a “License” and “Contributing” section** at the end (for open-source professionalism)?
