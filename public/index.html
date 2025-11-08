@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tic Tac Toe</title>
+    <style>
+        :root{
+            --bg:#0f1724;
+            --card:#0b1220;
+            --accent:#22c1c3;
+            --muted:#94a3b8;
+            --win:#16a34a;
+            --lose:#ef4444;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+        html,body{
+            height:100%;
+            margin:0;
+            background:linear-gradient(180deg,var(--bg),#071027 140%);
+            color:#e6eef6;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .container{
+            width:min(460px,95vw);
+            background:linear-gradient(180deg,var(--card),#071426);
+            padding:20px;
+            border-radius:12px;
+            box-shadow:0 10px 30px rgba(2,6,23,0.6);
+            text-align:center;
+        }
+        h1{ margin:0 0 8px; font-size:20px; letter-spacing:0.6px; }
+        .status{
+            color:var(--muted);
+            margin-bottom:16px;
+            font-size:14px;
+        }
+        .board{
+            display:grid;
+            grid-template-columns:repeat(3,1fr);
+            gap:10px;
+            margin:0 auto 16px;
+            width:320px;
+            max-width:90%;
+        }
+        .cell{
+            aspect-ratio:1/1;
+            background:linear-gradient(180deg,#071b2a 0%, #0b2634 100%);
+            border-radius:8px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:48px;
+            font-weight:700;
+            color:#e6eef6;
+            cursor:pointer;
+            user-select:none;
+            transition:transform 0.08s ease, box-shadow 0.08s ease;
+            box-shadow: inset 0 -6px 18px rgba(0,0,0,0.5);
+        }
+        .cell:hover{ transform:translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.45); }
+        .cell.disabled{ cursor:default; opacity:0.9; transform:none; box-shadow: inset 0 -6px 18px rgba(0,0,0,0.5); }
+        .cell.x{ color:#60a5fa; }
+        .cell.o{ color:#fca5a5; }
+        .controls{ display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
+        button{
+            background:transparent;
+            color:var(--accent);
+            border:1px solid rgba(34,193,195,0.15);
+            padding:8px 12px;
+            border-radius:8px;
+            cursor:pointer;
+            transition:background 0.12s ease, color 0.12s ease;
+            font-weight:600;
+        }
+        button.primary{
+            background:linear-gradient(90deg,var(--accent),#5eead4);
+            color:#022;
+            border:none;
+        }
+        .score{
+            display:flex;
+            gap:12px;
+            justify-content:center;
+            color:var(--muted);
+            font-size:13px;
+            margin-top:8px;
+        }
+        .highlight{
+            background:linear-gradient(90deg,#134e4a55,#065f4655);
+            border-radius:6px;
+            padding:6px 8px;
+            color:var(--win);
+            font-weight:700;
+        }
+        .tie{ color:var(--muted); font-weight:700; }
+        footer{ margin-top:12px; font-size:12px; color:var(--muted); }
+    </style>
+</head>
+<body>
+    <div class="container" role="application" aria-label="Tic Tac Toe game">
+        <h1>Tic Tac Toe</h1>
+        <div class="status" id="status">Current: <span id="turn">X</span></div>
+
+        <div class="board" id="board" aria-live="polite">
+            <div class="cell" data-index="0" role="button" tabindex="0"></div>
+            <div class="cell" data-index="1" role="button" tabindex="0"></div>
+            <div class="cell" data-index="2" role="button" tabindex="0"></div>
+
+            <div class="cell" data-index="3" role="button" tabindex="0"></div>
+            <div class="cell" data-index="4" role="button" tabindex="0"></div>
+            <div class="cell" data-index="5" role="button" tabindex="0"></div>
+
+            <div class="cell" data-index="6" role="button" tabindex="0"></div>
+            <div class="cell" data-index="7" role="button" tabindex="0"></div>
+            <div class="cell" data-index="8" role="button" tabindex="0"></div>
+        </div>
+
+        <div class="controls">
+            <button id="restart" class="primary" aria-label="Restart game">Restart</button>
+            <button id="aiToggle" aria-pressed="false">Play vs AI: Off</button>
+        </div>
+
+        <div class="score" id="scoreboard">
+            <div>Player X: <span id="scoreX">0</span></div>
+            <div>Player O: <span id="scoreO">0</span></div>
+            <div>Draws: <span id="scoreTie">0</span></div>
+        </div>
+
+        <footer>Click a square or press Enter/Space. Toggle AI to play vs simple CPU.</footer>
+    </div>
+
+    <script>
+        // Basic Tic Tac Toe with optional simple AI (random available move)
+        const WIN_COMBOS = [
+            [0,1,2],[3,4,5],[6,7,8],
+            [0,3,6],[1,4,7],[2,5,8],
+            [0,4,8],[2,4,6]
+        ];
+
+        const boardEl = document.getElementById('board');
+        const cells = Array.from(boardEl.querySelectorAll('.cell'));
+        const statusEl = document.getElementById('status');
+        const turnEl = document.getElementById('turn');
+        const restartBtn = document.getElementById('restart');
+        const aiToggle = document.getElementById('aiToggle');
+        const scoreX = document.getElementById('scoreX');
+        const scoreO = document.getElementById('scoreO');
+        const scoreTie = document.getElementById('scoreTie');
+
+        let board = Array(9).fill(null);
+        let current = 'X';
+        let running = true;
+        let vsAI = false;
+        let scores = { X:0, O:0, tie:0 };
+
+        function render(){
+            cells.forEach((cell,i) => {
+                cell.textContent = board[i] || '';
+                cell.classList.toggle('x', board[i]==='X');
+                cell.classList.toggle('o', board[i]==='O');
+                cell.classList.toggle('disabled', !!board[i] || !running);
+                cell.setAttribute('aria-label', board[i] ? `Cell ${i+1} ${board[i]}` : `Cell ${i+1} empty`);
+            });
+            turnEl.textContent = current;
+        }
+
+        function checkWinner(){
+            for(const combo of WIN_COMBOS){
+                const [a,b,c] = combo;
+                if(board[a] && board[a] === board[b] && board[a] === board[c]){
+                    return { winner: board[a], combo };
+                }
+            }
+            if(board.every(Boolean)) return { winner: null }; // tie
+            return null; // game continues
+        }
+
+        function endGame(result){
+            running = false;
+            if(result && result.winner){
+                statusEl.innerHTML = `Winner: <span class="highlight">${result.winner}</span>`;
+                scores[result.winner] += 1;
+                // highlight winning cells
+                result.combo.forEach(i => cells[i].classList.add('highlight'));
+            } else {
+                statusEl.innerHTML = `<span class="tie">It's a tie</span>`;
+                scores.tie += 1;
+            }
+            updateScores();
+            cells.forEach(c => c.classList.add('disabled'));
+        }
+
+        function updateScores(){
+            scoreX.textContent = scores.X;
+            scoreO.textContent = scores.O;
+            scoreTie.textContent = scores.tie;
+        }
+
+        function makeMove(idx){
+            if(!running || board[idx]) return;
+            board[idx] = current;
+            const result = checkWinner();
+            if(result){
+                endGame(result);
+            } else {
+                current = current === 'X' ? 'O' : 'X';
+                statusEl.textContent = `Current: `;
+                turnEl.textContent = current;
+                if(vsAI && current === 'O'){
+                    // slight delay for UX
+                    setTimeout(aiMove, 300);
+                }
+            }
+            render();
+        }
+
+        function aiMove(){
+            if(!running) return;
+            // Simple AI: try to win, block, else random
+            const avail = board.map((v,i)=> v? null:i).filter(v => v!==null);
+            if(avail.length===0) return;
+            // try win / block
+            for(const player of ['O','X']){ // first try to win with O, then block X
+                for(const i of avail){
+                    const clone = board.slice();
+                    clone[i] = player;
+                    const win = WIN_COMBOS.some(([a,b,c]) => clone[a] && clone[a]===clone[b] && clone[a]===clone[c]);
+                    if(win){
+                        makeMove(i);
+                        return;
+                    }
+                }
+            }
+            // else pick center, corners, then sides
+            const prefer = [4,0,2,6,8,1,3,5,7];
+            const choice = prefer.find(i => board[i]===null);
+            if(choice!==undefined) makeMove(choice);
+        }
+
+        // Event handlers
+        cells.forEach(cell => {
+            const idx = Number(cell.dataset.index);
+            cell.addEventListener('click', () => makeMove(idx));
+            cell.addEventListener('keydown', (e) => {
+                if(e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    makeMove(idx);
+                }
+            });
+        });
+
+        restartBtn.addEventListener('click', () => {
+            board = Array(9).fill(null);
+            current = 'X';
+            running = true;
+            statusEl.textContent = 'Current: ';
+            turnEl.textContent = current;
+            cells.forEach(c => c.classList.remove('highlight'));
+            render();
+        });
+
+        aiToggle.addEventListener('click', () => {
+            vsAI = !vsAI;
+            aiToggle.textContent = `Play vs AI: ${vsAI ? 'On' : 'Off'}`;
+            aiToggle.setAttribute('aria-pressed', String(vsAI));
+            // If AI turned on and it's O's turn, let AI play
+            if(vsAI && running && current==='O') setTimeout(aiMove, 200);
+        });
+
+        // initialize
+        render();
+        statusEl.textContent = 'Current: ';
+        turnEl.textContent = current;
+    </script>
+</body>
+</html>
