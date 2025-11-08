@@ -14,6 +14,7 @@ Includes a **persistent scoreboard**, **smooth animations**, and **full responsi
 * 📱 **Fully Responsive** – Works perfectly on desktop and mobile devices.
 * 💡 **Single-File Simplicity** – Easy to understand and modify for beginners.
 
+
 ---
 
 ## 🚀 Getting Started
@@ -53,7 +54,6 @@ A simple yet effective logic that makes the game engaging and competitive!
 
 ## 📸 Preview
 
-![Tic Tac Toe Preview](preview.png)
 <img width="1919" height="1022" alt="image" src="https://github.com/user-attachments/assets/584236e0-3f14-49f9-afdb-536201af2a33" />
 
 ---
